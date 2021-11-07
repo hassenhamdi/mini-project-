@@ -1,1 +1,268 @@
+from tkinter import *
+from tkinter import ttk
+import csv,os ,sys , time
+import tkinter.messagebox
+import tkinter.filedialog
+champs=['name','email','phone num']
+c=0
+def checkfile():
+ try:
+    p=open("path.txt")
+    os.chdir(p.read())
+    f = open("contacts.csv", "r", newline="")
+ except FileNotFoundError:
+    try:
+        with open("path.txt") as p:
+            os.chdir(p.read())
+            f = open("contacts.csv", "r", newline="")
+            
+    except :
+            
+        root = Tk()
+        root.overrideredirect(1)
+        root.withdraw()
+        tkinter.messagebox.showerror(title="error",message="File not found ")
+        yn=tkinter.messagebox.askyesno(title="Create new file",message="do you want to creating a new file Contacts.csv Y/N : ")
+        root.destroy()
+        if (yn):
+            f = open("contacts.csv", "x", newline="")
+            tkinter.messagebox.showinfo(title="Success",message="file has been Created in this Directory")
+            csvf = csv.DictWriter(f, delimiter=";",fieldnames=champs)
+            s =";".join(champs)
+            print(s,file=f)
+            f.close()
+            time.sleep(1)
+        else:
+            yn=tkinter.messagebox.askyesno(title="select directory",message="can you select the file contacts.csv directory Y/N : ")
+            if yn:
+                d=tkinter.filedialog.askdirectory(title="contacts.csv path")
+                with open("path.txt","w") as p:
+                    p.write(d)
+                os.chdir(d)
+                try:
+                    f = open("contacts.csv", "r", newline="")
+                except FileNotFoundError:
+                    tkinter.messagebox.showwarning(title="Invalide directory",message="File not Found Error")
+                    tkinter.messagebox.showinfo(title="Exit",message="Next time choose a valid option")
+                    quit()
+            
+def quit_f():
+    global window
+    window.destroy()
+    quit()
+def display_all():
+    clear_view()
+    global c
+    c=1
+    with open("contacts.csv",newline='') as r:
+        csvf=csv.reader(r,delimiter=";")
+        for i in csvf:
+            try:
+                if 'Nom' in i :
+                    continue
+                else:
+                    get_view(i)
+                    c=c+1
+            except:
+                break
+def search(s=1):
+    name = searchentry.get()
+    with open("contacts.csv","r",newline="") as f:
+        csvf=csv.reader(f,delimiter=";")
+        c=0
+        for i in csvf :
+            if(s):
+                if name == i[0] :
+                    clear_view()
+                    get_view(i)
+                    c+=1
+            else :
+                if name==i[0]:
+                    return i
+                    c=c+1
+        if c==0 :
+            tkinter.messagebox.showerror(title="not found",message="Le client n'existe pas")
+            clear_entry()
+        else:
+            tkinter.messagebox.showinfo(title="Found",message="Le client existe")
+
+def clear_view():
+    for item in tv.get_children():
+        tv.delete(item)
+def clear_entry():
+    searchentry.delete(0,END)
+    
+def get_view(i):
+    if c==0:
+        tv.insert(parent='', index=0, iid=0, values=(i[0], i[1], i[2]))
+    else:
+        tv.insert(parent='', index=c-1, iid=c-1, values=(i[0], i[1], i[2]))
+def fill_data_entries():
+    person=search(0)
+    client_name.delete(0,END)
+    client_email.delete(0,END)
+    Numero_Du_Client.delete(0,END)
+    client_name.insert(0,person[0])
+    client_email.insert(0,person[1])
+    Numero_Du_Client.insert(0,person[2])
+def clear_data_entries():
+    client_name.delete(0,END)
+    client_email.delete(0,END)
+    Numero_Du_Client.delete(0,END)
+    tkinter.messagebox.showinfo(title="update",message="Mettre à jour la liste")
+    display_all()
+def exist(p=0):
+         f2=open("contacts.csv", newline="")
+         r=csv.reader(f2,delimiter=";")
+         l=f2.readlines()
+         n = client_name.get()
+         e = client_email.get()
+         N = Numero_Du_Client.get()
+         new = [n, e, N]
+         person=";".join(new)+'\r\n'
+         c=-1
+         if person in l :
+             if 0<=p<2  : 
+                 tkinter.messagebox.showwarning(title="Alert",message='Le contact déja enregistreé')
+                 return 
+             else:
+                 l.remove(person)
+                 return l
+         else :
+                if p==0 :
+                    return new
+                for i in l:
+                    j=i.split(";")
+                    if n!='' and n == j[0] :
+                         c=l.index(i)
+                         l.pop(c)
+                         l.insert(c,person)
+                         return l
+                                          
+         f2.close()
+def addcontact():
+         with open("contacts.csv", "a", newline="") as f :
+          w = csv.writer(f, delimiter=';')
+          new=exist()
+          if new==None:
+              return
+          for i in range(len(new)):
+                if new[i] == '':
+                    new[i] = "None"
+          if new.count("None")==3 or new[0]=="None":
+                new=[]
+                tkinter.messagebox.showinfo(title="Ajout",message="Le champs nom est obligatoire !")
+
+          else:
+                w.writerow(new)
+                nom_var.set("")
+                email_var.set("")
+                Numero_var.set("")
+          tkinter.messagebox.showinfo(title="Ajout",message="Opération a été effectuer avec succes")
+          clear_data_entries()
+        
+
+def modifier():
+    l=exist(1)
+    if l==None:
+        return
+    w=open("contacts.csv","w",newline='')
+    w.writelines(l)
+    w.close()
+    tkinter.messagebox.showinfo(title="Modification",message="Opération a été effectuer avec succes")
+    search()
+    clear_data_entries()
+def supprimer():
+    l=exist(2)
+    w=open("contacts.csv","w",newline='')
+    w.writelines(l)
+    w.close()
+    tkinter.messagebox.showinfo(title="Supprission",message="Opération a été effectuer avec succes")
+    clear_data_entries()
+
+def wipe_data():
+    with open("contacts.csv","w") as w:
+        w.truncate(0)
+def version():
+    tkinter.messagebox.showinfo(title="version",message="C'est un prototype \n version 0.3")
+    
+        #GUI part
+window=Tk()
+window.title("Contacts")
+width=600
+height=600
+screen_width=window.winfo_screenwidth()
+screen_height=window.winfo_screenheight()
+x = (screen_width/2) - (width/2)
+y = (screen_height/2) - (height/2)
+window.geometry("%dx%d+%d+%d" % (width, height, x, y))
+nom_var=StringVar()
+email_var=StringVar()
+Numero_var=StringVar()
+window.minsize(width=400,height=400)
+f=LabelFrame(window,text="Client")
+f.pack(expand=YES,padx=10,pady=10,fill=BOTH)
+Display_All=Frame(window)
+Display_All.pack(padx=5,pady=2)
+f2=LabelFrame(window,text="Rechercher")
+f2.pack(padx=10,pady=10,fill=BOTH)
+f3=LabelFrame(window,text='Données des clients')
+f3.pack(padx=10,pady=10,fill=BOTH)
+menu_bar=Menu(window)
+menu_fichier=Menu(menu_bar,tearoff=0)
+menu_aide=Menu(menu_bar,tearoff=0)
+menu_aide.add_command(label="version",command=version)
+menu_fichier.add_command(label="Ajouter un contact",command=addcontact)
+menu_fichier.add_command(label='Quitter',command=quit_f)
+menu_bar.add_cascade(label="Fichier",menu=menu_fichier)
+menu_bar.add_cascade(label="Aide ?",menu=menu_aide)
+window.config(menu=menu_bar)
+tv=ttk.Treeview(f,columns=(1,2,3),show='headings',height=8)
+style=ttk.Style(tv)
+style.configure('Treeview',rowheight=30)
+tv.pack(side=LEFT)
+tv.place(x=0,y=0)
+tv.heading(1,text="Nom")
+tv.heading(2,text="e-mail")
+tv.heading(3,text="Num° Tél")
+sb=ttk.Scrollbar(f,orient=VERTICAL)
+sb.pack(side=RIGHT,fill=Y)
+tv.config(yscrollcommand=sb.set)
+sb.config(command=tv.yview)
+Display=Button(Display_All,text="Afficher tout",command=display_all)
+Display.pack(side=LEFT,padx=10,pady=2)
+delete=Button(Display_All,text="Supprission totale",command=wipe_data)
+delete.pack(side=LEFT,padx=10,pady=2)
+searchentry=Entry(f2,font=("Times New Roman",14))
+searchentry.pack(side=LEFT,padx=10,pady=10)
+rechercher=Button(f2,text='Rechercher',command=search)
+rechercher.pack(side=LEFT,padx=10,pady=10)
+donnee=Button(f2,text='Données',command=fill_data_entries)
+donnee.pack(side=LEFT,padx=10,pady=10)
+
+nom_client=Label(f3,text="Nom du client")
+nom_client.grid(row=0,column=0)
+client_name=Entry(f3,textvariable=nom_var,font=("Times New Roman",14))
+client_name.grid(row=0,column=1,padx=10,pady=10)
+client_name.focus()
+client_email_l=Label(f3,text="L'email du Client")
+client_email_l.grid(row=1,column=0,padx=10,pady=10)
+client_email=Entry(f3,textvariable=email_var,font=("Times New Roman",14))
+client_email.grid(row=1,column=1,padx=10,pady=10)
+client_email.focus()
+Numero_Du_Client_l=Label(f3,text="Numéro du client")
+Numero_Du_Client_l.grid(row=2,column=0,padx=10,pady=10)
+Numero_Du_Client=Entry(f3,textvariable=Numero_var,font=("Times New Roman",14))
+Numero_Du_Client.grid(row=2,column=1,padx=10,pady=10)
+client_email.focus()
+ajouter=Button(f3,text="Ajouter",command=addcontact)
+ajouter.grid(row=1,column=3,padx=10,pady=10)
+
+
+Modifier=Button(f3,text="Modifier",command=modifier)
+Modifier.grid(row=1,column=4,padx=10,pady=10)
+Supprimer=Button(f3,text="Supprimer",command=supprimer)
+Supprimer.grid(row=1,column=5,padx=10,pady=10)
+checkfile()
+window.mainloop()
 
